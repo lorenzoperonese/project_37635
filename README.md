@@ -1,36 +1,36 @@
 # Connect X project for the algorithm course of University of Bologna in 2022/2023
 ## Lorenzo Peronese, Omar Ayache
 
-## Instructions for compiling:
-In the 'connectx/' directory run::
+Run this commands in the `connectx/` directory.
 
-  	javac -cp ".." *.java */*.java
+## Build from source
+```
+javac -cp ".." *.java */*.java
+```
 
+## CXGame application:
+### - Human vs Computer
+```
+java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
+```
 
-CXGame application:
+### - Computer vs Computer
+```
+java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
+```
 
-- Human vs Computer.  In the connectx/ directory run:
+## CXPlayerTester application:
+### - Output score only:
+```
+java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
+```
 
-  	java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
+### - Verbose output
+```
+java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
+```
 
-
-- Computer vs Computer. In the connectx/ directory run:
-
-  	java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
-
-
-CXPlayerTester application:
-
-- Output score only:
-
-  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
-
-
-- Verbose output
-
-  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
-
-
-- Verbose output and customized timeout (1 sec) and number of game repetitions (10 rounds)
-
-  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
+### - Verbose output and customized timeout and number of game repetitions
+```
+java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t "timeout_in_secs" -r "rounds_number"
+```
