@@ -122,6 +122,10 @@ public class OurPlayer implements CXPlayer {
             return Integer.MAX_VALUE;
         else if (board.gameState() == this.yourWin)
             return Integer.MIN_VALUE;
+        else {
+            // do something
+            return 0;
+        }
     }
 
 
