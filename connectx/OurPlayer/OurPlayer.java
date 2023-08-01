@@ -48,7 +48,6 @@ public class OurPlayer implements CXPlayer {
     }
 
     public int selectColumn(CXBoard B) {
-
         this.START = System.currentTimeMillis();
         int bestMove = -1;
         int bestScore = Integer.MIN_VALUE;
@@ -56,15 +55,15 @@ public class OurPlayer implements CXPlayer {
         int beta = Integer.MAX_VALUE;
         Integer[] L = B.getAvailableColumns();
         int depth = 10;
-        for (int move : L) {
+        for (int i = 0; i < L.length; i++) {
             CXBoard newBoard = B.copy();
-            newBoard.markColumn(move);
+            newBoard.markColumn(L[i]);
             int score = minimax(newBoard, depth -1, alpha, beta);
-            newBoard.unmarkColumn();
+           newBoard.unmarkColumn();
 
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = move;
+                bestMove = L[i];
             }
         }
         return bestMove;
@@ -118,99 +117,14 @@ public class OurPlayer implements CXPlayer {
     }
 
     private int evaluate(CXBoard board) {
-        int X = board.X; // Numero di simboli da allineare
 
-        // Calcolo il numero di connessioni per il giocatore corrente
-        int currentPlayerConnections = countConnections(board, this.player, X);
-
-        // Calcolo il numero di connessioni per l'avversario
-        int opponentConnections = countConnections(board, this.opponent, X);
-
-        // Assegno un punteggio basato sulle connessioni del giocatore corrente meno le connessioni dell'avversario
-        int score = currentPlayerConnections - opponentConnections;
-
-        // Se il giocatore corrente ha vinto, gli assegno un punteggio molto alto
         if (board.gameState() == this.myWin)
-            score = Integer.MAX_VALUE;
+            return Integer.MAX_VALUE;
         else if (board.gameState() == this.yourWin)
-            score = 0;
-
-        return score;
+            return Integer.MIN_VALUE;
     }
 
-    // Funzione di utilità per calcolare il numero di connessioni per un giocatore dato
-    private int countConnections(CXBoard board, CXCellState player, int X) {
-        int M = board.M;
-        int N = board.N;
 
-        int connections = 0;
-
-        // Controllo le righe
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j <= N - X; j++) {
-                boolean isConnected = true;
-                for (int k = 0; k < X; k++) {
-                    if (board.cellState(i, j + k) != player) {
-                        isConnected = false;
-                        break;
-                    }
-                }
-                if (isConnected) {
-                    connections++;
-                }
-            }
-        }
-
-        // Controllo le colonne
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j <= M - X; j++) {
-                boolean isConnected = true;
-                for (int k = 0; k < X; k++) {
-                    if (board.cellState(j + k, i) != player) {
-                        isConnected = false;
-                        break;
-                    }
-                }
-                if (isConnected) {
-                    connections++;
-                }
-            }
-        }
-
-        // Controllo le diagonali (verso l'alto)
-        for (int i = 0; i <= M - X; i++) {
-            for (int j = 0; j <= N - X; j++) {
-                boolean isConnected = true;
-                for (int k = 0; k < X; k++) {
-                    if (board.cellState(i + k, j + k) != player) {
-                        isConnected = false;
-                        break;
-                    }
-                }
-                if (isConnected) {
-                    connections++;
-                }
-            }
-        }
-
-        // Controllo le diagonali (verso il basso)
-        for (int i = X - 1; i < M; i++) {
-            for (int j = 0; j <= N - X; j++) {
-                boolean isConnected = true;
-                for (int k = 0; k < X; k++) {
-                    if (board.cellState(i - k, j + k) != player) {
-                        isConnected = false;
-                        break;
-                    }
-                }
-                if (isConnected) {
-                    connections++;
-                }
-            }
-        }
-
-        return connections;
-    }
 
 
     public String playerName() {
