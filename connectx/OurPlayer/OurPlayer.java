@@ -48,24 +48,29 @@ public class OurPlayer implements CXPlayer {
     }
 
     public int selectColumn(CXBoard B) {
+        if(B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1)
+            return B.M/2;
         this.START = System.currentTimeMillis();
         int bestMove = -1;
         int bestScore = Integer.MIN_VALUE;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         Integer[] L = B.getAvailableColumns();
-        int depth = 10;
+        int depth = 100;
         for (int i = 0; i < L.length; i++) {
             CXBoard newBoard = B.copy();
             newBoard.markColumn(L[i]);
             int score = minimax(newBoard, depth -1, alpha, beta);
-           newBoard.unmarkColumn();
+            newBoard.unmarkColumn();
 
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = L[i];
             }
         }
+        System.out.println(bestMove);
+        if(bestMove == -1 && !B.fullColumn(B.M/2))
+            bestMove = B.M/2;
         return bestMove;
     }
 
@@ -124,7 +129,7 @@ public class OurPlayer implements CXPlayer {
             return Integer.MIN_VALUE;
         else {
             // do something
-            return 0;
+            return -1;
         }
     }
 
