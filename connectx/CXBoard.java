@@ -52,7 +52,7 @@ public class CXBoard {
 
 	protected LinkedList<CXCell> MC;   // Marked Cells stack (used to undo)
 	protected int                RP[]; // First free row position
-	protected TreeSet<Integer>   AC;   // Availabe (not full) columns
+	protected TreeSet<Integer>   AC;   // Available (not full) columns
 	
 	// we define characters for players (PR for Red, PY for Yellow)
 	private final CXCellState[] Player = {CXCellState.P1, CXCellState.P2};
