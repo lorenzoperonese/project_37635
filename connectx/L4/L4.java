@@ -1,7 +1,6 @@
 package connectx.L4;
 
-/* MiniMax + AlphaBeta Pruning + ChatGPT's Transposition Table
- */
+// MiniMax + AlphaBeta Pruning + Transposition Table
 
 import connectx.CXCellState;
 import connectx.CXGameState;
@@ -144,8 +143,7 @@ public class L4 implements CXPlayer {
         else if (board.gameState() == this.yourWin)
             return Integer.MIN_VALUE;
         else {
-            // idea: se ho X-1 pedine allineate e posti vuoti ai lati, alta valutazione
-            //       se l'avversario ha pedine allineate e posti vuoti ai lati, bassa valutazione
+            // something
             return 0;
         }
     }
@@ -169,7 +167,7 @@ public class L4 implements CXPlayer {
         if (transpositionTable.containsKey(hash)) {
             return transpositionTable.get(hash);
         }
-        return Integer.MIN_VALUE; // Valore che indica che la posizione non è presente nella tabella.
+        return Integer.MIN_VALUE; // Valore che indica che la posizione non è presente nella tabella
     }
 
     private void storeTranspositionTable(CXBoard board, int score) {

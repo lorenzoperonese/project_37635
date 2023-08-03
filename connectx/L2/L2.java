@@ -1,8 +1,6 @@
 package connectx.L2;
 
-/* MiniMax + AlphaBeta Pruning,
-    but sexier
- */
+// MiniMax + AlphaBeta Pruning
 
 import connectx.CXCellState;
 import connectx.CXGameState;
@@ -84,7 +82,7 @@ public class L2 implements CXPlayer {
                 int score = alphaBetaMin(B, alpha, beta, depthleft - 1);
                 B.unmarkColumn();
                 if (score >= beta)
-                    return beta;   // fail hard beta-cutoff
+                    return beta;   // cutoff
                 if (score > alpha)
                     alpha = Math.max(alpha, score);
             }
@@ -104,7 +102,7 @@ public class L2 implements CXPlayer {
                 int score = alphaBetaMax(B, alpha, beta, depthleft - 1);
                 B.unmarkColumn();
                 if (score <= alpha)
-                    return alpha; // fail hard alpha-cutoff
+                    return alpha; // cutoff
                 if (score < beta)
                     beta = Math.min(beta, score);
             }
@@ -120,9 +118,8 @@ public class L2 implements CXPlayer {
         else if (board.gameState() == this.yourWin)
             return Integer.MIN_VALUE;
         else {
-            // idea: se ho X-1 pedine allineate e posti vuoti ai lati, alta valutazione
-            //       se l'avversario ha pedine allineate e posti vuoti ai lati, bassa valutazione
-            return board.N/2;
+            // something
+            return 0;
         }
     }
 
