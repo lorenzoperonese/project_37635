@@ -22,7 +22,6 @@ public class L4 implements CXPlayer {
     int symbols;
     CXCellState player;
     CXCellState opponent;
-    Integer[] moveOrder;
     private long[][][] zobristKeys; // Matrice per memorizzare i valori Zobrist delle celle
     private Map<Long, Integer> transpositionTable;
 
@@ -47,9 +46,6 @@ public class L4 implements CXPlayer {
             this.opponent = CXCellState.P1;
         }
         this.TIMEOUT = timeout_in_secs;
-        Integer[] moveOrder = new Integer[100];
-        for(int i=0;i<N;i++)
-            moveOrder[i]= N/2 + (1-2*(i%2))*(i+1)/2; // move explorator order: 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
         Random random = new Random();
         zobristKeys = new long[M][N][3];
         for (int i = 0; i < M; i++) {
@@ -73,47 +69,42 @@ public class L4 implements CXPlayer {
 
     public int selectColumn(CXBoard B) {
         this.START = System.currentTimeMillis();
-        Random random = new Random();
-        // idea: all'inizio prendere il centro, ma riempire comunque la transposition table
+        // idea: all'inizio prendere il centro
+        if(B.numOfMarkedCells() == 0)
+            return B.N/2;
         int bestMove = -1;
         int alpha = Integer.MIN_VALUE +1;
         int beta = Integer.MAX_VALUE;
+        Integer[] L = B.getAvailableColumns();
         int depth = 1000000;
-        for (int i = 0; i < this.moveOrder.length; i++) {
-            if(!B.fullColumn(this.moveOrder[i])) {
-                B.markColumn(moveOrder[i]);
-                int score = alphaBetaMin(B, alpha, beta, depth);
-                B.unmarkColumn();
-                if (score > alpha) {
-                    alpha = score;
-                    bestMove = moveOrder[i];
-                }
+        for (int i = 0; i < L.length; i++) {
+            B.markColumn(L[i]);
+            int score = alphaBetaMin(B, alpha, beta, depth);
+            B.unmarkColumn();
+            if (score > alpha) {
+                alpha = score;
+                bestMove = L[i];
             }
         }
-        if(B.numOfMarkedCells() == 0)
-            bestMove = B.N/2;
-        while(bestMove == -1 || B.fullColumn(bestMove))
-            bestMove = random.nextInt() % B.M;
         return bestMove;
     }
 
-    int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft) {
+    int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft ) {
         try {
             checktime();
             int transpositionScore = lookupTranspositionTable(B);
             if (transpositionScore != Integer.MIN_VALUE)
                 return transpositionScore;
             if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
-            for (int i = 0; i < this.moveOrder.length; i++) {
-                if(!B.fullColumn(this.moveOrder[i])) {
-                    B.markColumn(moveOrder[i]);
-                    int score = alphaBetaMin(B, alpha, beta, depthleft - 1);
-                    B.unmarkColumn();
-                    if (score >= beta)
-                        return beta;   // cutoff
-                    if (score > alpha)
-                        alpha = score;
-                }
+            Integer[] L = B.getAvailableColumns();
+            for (int i = 0; i < L.length; i++) {
+                B.markColumn(L[i]);
+                int score = alphaBetaMin(B, alpha, beta, depthleft - 1);
+                B.unmarkColumn();
+                if (score >= beta)
+                    return beta;   // cutoff
+                if (score > alpha)
+                    alpha = Math.max(alpha, score);
             }
             storeTranspositionTable(B, alpha);
             return alpha;
@@ -122,23 +113,22 @@ public class L4 implements CXPlayer {
         }
     }
 
-    int alphaBetaMin(CXBoard B, int alpha, int beta, int depthleft) {
+    int alphaBetaMin(CXBoard B, int alpha, int beta, int depthleft ) {
         try {
             checktime();
             int transpositionScore = lookupTranspositionTable(B);
             if (transpositionScore != Integer.MIN_VALUE)
                 return transpositionScore;
             if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
-            for (int i = 0; i < this.moveOrder.length; i++) {
-                if(!B.fullColumn(this.moveOrder[i])) {
-                    B.markColumn(moveOrder[i]);
-                    int score = alphaBetaMax(B, alpha, beta, depthleft - 1);
-                    B.unmarkColumn();
-                    if (score <= alpha)
-                        return alpha; // cutoff
-                    if (score < beta)
-                        beta = score;
-                }
+            Integer[] L = B.getAvailableColumns();
+            for (int i = 0; i < L.length; i++) {
+                B.markColumn(L[i]);
+                int score = alphaBetaMax(B, alpha, beta, depthleft - 1);
+                B.unmarkColumn();
+                if (score <= alpha)
+                    return alpha; // cutoff
+                if (score < beta)
+                    beta = Math.min(beta, score);
             }
             storeTranspositionTable(B, beta);
             return beta;
