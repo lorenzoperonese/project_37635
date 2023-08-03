@@ -1,6 +1,6 @@
 package connectx.L4_5;
 
-// MiniMax + AlphaBeta Pruning + Transposition Table
+// MiniMax + AlphaBeta Pruning + Transposition Table + Move Explorator Order
 
 import connectx.CXCellState;
 import connectx.CXGameState;
@@ -49,7 +49,7 @@ public class L4_5 implements CXPlayer {
         this.TIMEOUT = timeout_in_secs;
         this.moveOrder = new Integer[100];
         for(int i=0;i<this.columns;i++)
-            this.moveOrder[i]= this.columns/2 + (1-2*(i%2))*(i+1)/2 -1; // move explorator order: 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
+            this.moveOrder[i]= this.columns/2 + (1-2*(i%2))*(i+1)/2 -1; // 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
         Random random = new Random();
         this.zobristKeys = new long[this.rows][this.columns][3];
         for (int i = 0; i < this.rows; i++) {
