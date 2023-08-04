@@ -49,7 +49,7 @@ public class L4_5 implements CXPlayer {
         this.TIMEOUT = timeout_in_secs;
         this.moveOrder = new Integer[100];
         for(int i=0;i<this.columns;i++)
-            this.moveOrder[i]= this.columns/2 + (1-2*(i%2))*(i+1)/2 -1; // 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
+            this.moveOrder[i]= this.columns/2 + (1-2*(i%2))*(i+1)/2; // 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
         Random random = new Random();
         this.zobristKeys = new long[this.rows][this.columns][3];
         for (int i = 0; i < this.rows; i++) {
@@ -65,7 +65,6 @@ public class L4_5 implements CXPlayer {
     private void checktime() throws TimeoutException {
 
         if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (99.0 / 100.0)) {
-            System.err.println("Time");
             throw new TimeoutException();
         }
 
@@ -79,14 +78,21 @@ public class L4_5 implements CXPlayer {
         int alpha = Integer.MIN_VALUE +1;
         int beta = Integer.MAX_VALUE;
         int depth = 100000;
-        for (int i = 0; i < this.columns; i++) {
-            if(!B.fullColumn(this.moveOrder[i])) {
-                B.markColumn(this.moveOrder[i]);
-                int score = alphaBetaMin(B, alpha, beta, depth);
-                B.unmarkColumn();
-                if (score > alpha) {
-                    alpha = score;
-                    bestMove = moveOrder[i];
+        if(B.numOfMarkedCells() == 0) {
+            B.markColumn(this.columns/2);
+            alphaBetaMin(B, alpha, beta, depth);
+            B.unmarkColumn();
+        }
+        else {
+            for (int i = 0; i < this.columns; i++) {
+                if (!B.fullColumn(this.moveOrder[i])) {
+                    B.markColumn(this.moveOrder[i]);
+                    int score = alphaBetaMin(B, alpha, beta, depth);
+                    B.unmarkColumn();
+                    if (score > alpha) {
+                        alpha = score;
+                        bestMove = moveOrder[i];
+                    }
                 }
             }
         }
