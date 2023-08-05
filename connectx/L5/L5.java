@@ -32,7 +32,6 @@ public class L5 implements CXPlayer {
 
     boolean am_i_first;
 
-
     public L5() {
     }
 
@@ -41,13 +40,12 @@ public class L5 implements CXPlayer {
         this.columns = N;
         this.symbols = K;
         am_i_first = first;
-        if(first) {
+        if (first) {
             this.myWin = CXGameState.WINP1;
             this.yourWin = CXGameState.WINP2;
             this.player = CXCellState.P1;
             this.opponent = CXCellState.P2;
-        }
-        else {
+        } else {
             this.myWin = CXGameState.WINP2;
             this.yourWin = CXGameState.WINP1;
             this.player = CXCellState.P2;
@@ -57,11 +55,12 @@ public class L5 implements CXPlayer {
         this.moveOrder = new Integer[50];
         // invece di controllare le mosse possibili da 1 a n, controllo prima
         // le colonne centrali per ottimizzare i cutoff di alpha-beta
-        // (solitamente le mosse centrali sono migliori, quindi quelle laterali vengono tagliate)
+        // (solitamente le mosse centrali sono migliori, quindi quelle laterali vengono
+        // tagliate)
         // moveOrder[0] -> N/2, moveOrder[1] -> N/2 -1, moveOrder[2] -> N/2 +1, ...
         // PS ottimizzabile per il futuro modificando l'array in base alla situazione
-        for(int i=0;i<this.columns;i++)
-            this.moveOrder[i]= this.columns/2 + (1-2*(i%2))*(i+1)/2;
+        for (int i = 0; i < this.columns; i++)
+            this.moveOrder[i] = this.columns / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2;
         Random random = new Random(System.currentTimeMillis());
         this.zobristKeys = new long[this.rows][this.columns][3];
         for (int i = 0; i < this.rows; i++) {
@@ -97,103 +96,102 @@ public class L5 implements CXPlayer {
         int currentBestMove = -1;
         timeisrunningout = false;
         // temporaneo per testing
-        if(B.numOfMarkedCells() < 7)
-            return this.columns/2;
-        while (!timeisrunningout) {
-            bestMove = currentBestMove;
-            // System.err.println("bestMove: " + bestMove);
-            depth += 2;
-            // System.err.println("depth: " + depth);
-            if (B.numOfMarkedCells() == 0) {
-                // se sono il primo a muovere muovo al centro,
-                // ma uso comunque il tempo per esplorare
-                // e riempire la transposition table,
-                // esplorando solo il ramo della mossa centrale che farò
-                B.markColumn(this.columns / 2);
-                alphaBetaMin(B, alpha, beta, depth);
-                B.unmarkColumn();
-                currentBestMove = this.columns / 2;
-            } else {
-                for (int i = 0; i < this.columns; i++) {
-                    if (!B.fullColumn(this.moveOrder[i])) {
-                        B.markColumn(this.moveOrder[i]);
-                        int score = alphaBetaMin(B, alpha, beta, depth);
-                        B.unmarkColumn();
-                        // System.err.println("Move: " + this.moveOrder[i]);
-                        System.err.println("Score: " + score);
-                        // System.err.println("Alpha: " + alpha);
-                        if (score > alpha) {
-                            alpha = score;
-                            currentBestMove = this.moveOrder[i];
-                            // System.err.println("Move changed: ");
+        if (B.numOfMarkedCells() < 7)
+            return this.columns / 2;
+
+        try {
+            while (!timeisrunningout) {
+                bestMove = currentBestMove;
+                // System.err.println("bestMove: " + bestMove);
+                depth += 2;
+                // System.err.println("depth: " + depth);
+                if (B.numOfMarkedCells() == 0) {
+                    // se sono il primo a muovere muovo al centro,
+                    // ma uso comunque il tempo per esplorare
+                    // e riempire la transposition table,
+                    // esplorando solo il ramo della mossa centrale che farò
+                    B.markColumn(this.columns / 2);
+                    alphaBetaMin(B, alpha, beta, depth);
+                    B.unmarkColumn();
+                    currentBestMove = this.columns / 2;
+                } else {
+                    for (int i = 0; i < this.columns; i++) {
+                        if (!B.fullColumn(this.moveOrder[i])) {
+                            B.markColumn(this.moveOrder[i]);
+                            int score = alphaBetaMin(B, alpha, beta, depth);
+                            B.unmarkColumn();
+                            // System.err.println("Move: " + this.moveOrder[i]);
+                            System.err.println("Score: " + score);
+                            // System.err.println("Alpha: " + alpha);
+                            if (score > alpha) {
+                                alpha = score;
+                                currentBestMove = this.moveOrder[i];
+                                // System.err.println("Move changed: ");
+                            }
                         }
                     }
                 }
             }
-        }
-        System.err.println("Depth reached: " + (depth));
-        System.err.println("Transposition table hits: " + transpositionTableHits);
-        System.err.println("Transposition table misses: " + transpositionTableMisses);
-        // se non ho trovato una mossa valida, gioco random
-        while(bestMove == -1 || B.fullColumn(bestMove))
-            bestMove = random.nextInt(this.columns);
-            
-        // System.err.println("bestMove: " + bestMove);
-        return bestMove;
-    }
-
-    int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft) {
-        try {
-            checktime();
-            // se lo score della mossa è nella transposition table lo uso,
-            // altrimenti lo valuto e lo salvo nella transposition table
-            int transpositionScore = lookupTranspositionTable(B, depthleft);
-            if (transpositionScore != Integer.MIN_VALUE) {
-                transpositionTableHits++;
-                return transpositionScore;
-            }
-            transpositionTableMisses++;
-            if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
-            for (int i = 0; i < this.columns; i++) {
-                if(!B.fullColumn(this.moveOrder[i])) {
-                    B.markColumn(this.moveOrder[i]);
-                    int score = alphaBetaMin(B, alpha, beta, depthleft - 1);
-                    B.unmarkColumn();
-                    if (score >= beta) {
-                        storeTranspositionTable(B, beta, depthleft);
-                        return beta;   // cutoff
-                    }
-                    if (score > alpha)
-                        alpha = score;
-                }
-            }
-            storeTranspositionTable(B, alpha, depthleft);
-            return alpha;
+            return bestMove;
         } catch (TimeoutException e) {
-            return evaluate(B);
+            System.err.println("Depth reached: " + (depth));
+            System.err.println("Transposition table hits: " + transpositionTableHits);
+            System.err.println("Transposition table misses: " + transpositionTableMisses);
+            // se non ho trovato una mossa valida, gioco random
+            while (bestMove == -1 || B.fullColumn(bestMove))
+                bestMove = random.nextInt(this.columns);
+
+            // System.err.println("bestMove: " + bestMove);
+            return bestMove;
         }
     }
 
-    int alphaBetaMin(CXBoard B, int alpha, int beta, int depthleft) {
-        try {
-            checktime();
-            if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
-            for (int i = 0; i < this.columns; i++) {
-                if(!B.fullColumn(this.moveOrder[i])) {
-                    B.markColumn(this.moveOrder[i]);
-                    int score = alphaBetaMax(B, alpha, beta, depthleft - 1);
-                    B.unmarkColumn();
-                    if (score <= alpha) {
-                        return alpha; // cutoff
-                    }
-                    if (score < beta)
-                        beta = score;
-                }
-            }
-            return beta;
-        } catch (TimeoutException e) {
-            return evaluate(B);
+    int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft) throws TimeoutException {
+        checktime();
+        // se lo score della mossa è nella transposition table lo uso,
+        // altrimenti lo valuto e lo salvo nella transposition table
+        int transpositionScore = lookupTranspositionTable(B, depthleft);
+        if (transpositionScore != Integer.MIN_VALUE) {
+            transpositionTableHits++;
+            return transpositionScore;
         }
+        transpositionTableMisses++;
+        if (depthleft == 0 || B.gameState() != CXGameState.OPEN)
+            return evaluate(B);
+        for (int i = 0; i < this.columns; i++) {
+            if (!B.fullColumn(this.moveOrder[i])) {
+                B.markColumn(this.moveOrder[i]);
+                int score = alphaBetaMin(B, alpha, beta, depthleft - 1);
+                B.unmarkColumn();
+                if (score >= beta) {
+                    storeTranspositionTable(B, beta, depthleft);
+                    return beta; // cutoff
+                }
+                if (score > alpha)
+                    alpha = score;
+            }
+        }
+        storeTranspositionTable(B, alpha, depthleft);
+        return alpha;
+    }
+
+    int alphaBetaMin(CXBoard B, int alpha, int beta, int depthleft) throws TimeoutException {
+        checktime();
+        if (depthleft == 0 || B.gameState() != CXGameState.OPEN)
+            return evaluate(B);
+        for (int i = 0; i < this.columns; i++) {
+            if (!B.fullColumn(this.moveOrder[i])) {
+                B.markColumn(this.moveOrder[i]);
+                int score = alphaBetaMax(B, alpha, beta, depthleft - 1);
+                B.unmarkColumn();
+                if (score <= alpha) {
+                    return alpha; // cutoff
+                }
+                if (score < beta)
+                    beta = score;
+            }
+        }
+        return beta;
     }
 
     private int evaluate(CXBoard board) {
@@ -235,7 +233,7 @@ public class L5 implements CXPlayer {
     private void storeTranspositionTable(CXBoard board, int score, int depth) {
         // se il tempo sta per scadere non aggiorno la transposition table
         // perchè il valore che è stato calcolato potrebbe essere inesatto
-        if(timeisrunningout)
+        if (timeisrunningout)
             return;
         long hash = computeHash(board);
         Score_Depth sd = new Score_Depth(score, depth);
