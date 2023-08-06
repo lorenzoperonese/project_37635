@@ -78,7 +78,7 @@ public class L5 implements CXPlayer {
 
     private void checktime() throws TimeoutException {
 
-        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (90.0 / 100.0)) {
+        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (80.0 / 100.0)) {
             timeisrunningout = true;
             throw new TimeoutException();
         }
@@ -98,7 +98,7 @@ public class L5 implements CXPlayer {
         int currentBestMove = -1;
         timeisrunningout = false;
         try {
-            while (!timeisrunningout) {
+            while (depth <= this.columns * this.rows + 10) {
                 bestMove = currentBestMove;
                 depth += 2;
                 if (B.numOfMarkedCells() == 0) {
@@ -127,9 +127,9 @@ public class L5 implements CXPlayer {
             }
             return bestMove;
         } catch (TimeoutException e) {
-            // System.err.println("Depth reached: " + (depth));
-            // System.err.println("Transposition table hits: " + transpositionTableHits);
-            // System.err.println("Transposition table misses: " + transpositionTableMisses);
+            System.err.println("Depth reached: " + (depth));
+            System.err.println("Transposition table hits: " + transpositionTableHits);
+            System.err.println("Transposition table misses: " + transpositionTableMisses);
             // se non ho trovato una mossa valida, gioco random
             // System.err.println("posti liberi nella colonna: " + B.RP[bestMove]);
             while (bestMove == -1 || B.fullColumn(bestMove)) {
@@ -215,11 +215,10 @@ public class L5 implements CXPlayer {
 
     private int lookupTranspositionTable(CXBoard board, int depth) {
         long hash = computeHash(board);
-        // se l'hash della board attuale è nella table e è calcolato
-        // a una profondità maggiore o uguale a quella attuale, lo ritorno
-        if (transpositionTable.containsKey(hash) && transpositionTable.get(hash).getDepth() >= depth) {
+        // se l'hash della board attuale è nella table e è calcolato a una profondità
+        // maggiore o uguale a quella attuale oppure so che la mossa è vincente, lo ritorno
+        if (transpositionTable.containsKey(hash) && (transpositionTable.get(hash).getDepth() >= depth || transpositionTable.get(hash).getScore() == Integer.MAX_VALUE))
             return transpositionTable.get(hash).getScore();
-        }
         // valore che indica che la posizione non è presente nella tabella
         return Integer.MIN_VALUE;
     }

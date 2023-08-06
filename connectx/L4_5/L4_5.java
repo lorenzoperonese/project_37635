@@ -65,11 +65,11 @@ public class L4_5 implements CXPlayer {
     private void checktime() throws TimeoutException {
 
         if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (99.0 / 100.0)) {
+            System.err.println("Time");
             throw new TimeoutException();
         }
 
     }
-
     public int selectColumn(CXBoard B) {
         this.START = System.currentTimeMillis();
         Random random = new Random();
@@ -77,7 +77,7 @@ public class L4_5 implements CXPlayer {
         int bestMove = -1;
         int alpha = Integer.MIN_VALUE +1;
         int beta = Integer.MAX_VALUE;
-        int depth = 100000;
+        int depth = 9;
         if(B.numOfMarkedCells() == 0) {
             B.markColumn(this.columns/2);
             alphaBetaMin(B, alpha, beta, depth);
