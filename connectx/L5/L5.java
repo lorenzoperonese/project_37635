@@ -78,7 +78,7 @@ public class L5 implements CXPlayer {
 
     private void checktime() throws TimeoutException {
 
-        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (99.0 / 100.0)) {
+        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (90.0 / 100.0)) {
             timeisrunningout = true;
             throw new TimeoutException();
         }
@@ -91,42 +91,35 @@ public class L5 implements CXPlayer {
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         int depth = am_i_first ? 0 : 1;
-        // iterative deepening: controllo prima a profondità 1,
-        // poi a profondità 2, ... finchè non finisce il tempo
+        CXBoard newBoard = B.copy();
+        // iterative deepening: se sono il primo a muovere,
+        // controllo a provondità 2, 4, 6, ...
+        // se sono il secondo, controllo a profondità 3, 5, 7, ...
         int currentBestMove = -1;
         timeisrunningout = false;
-        // temporaneo per testing
-        if (B.numOfMarkedCells() < 7)
-            return this.columns / 2;
-
         try {
             while (!timeisrunningout) {
                 bestMove = currentBestMove;
-                // System.err.println("bestMove: " + bestMove);
                 depth += 2;
-                // System.err.println("depth: " + depth);
                 if (B.numOfMarkedCells() == 0) {
                     // se sono il primo a muovere muovo al centro,
                     // ma uso comunque il tempo per esplorare
                     // e riempire la transposition table,
                     // esplorando solo il ramo della mossa centrale che farò
-                    B.markColumn(this.columns / 2);
-                    alphaBetaMin(B, alpha, beta, depth);
-                    B.unmarkColumn();
+                    newBoard.markColumn(this.columns / 2);
+                    alphaBetaMin(newBoard, alpha, beta, depth);
+                    newBoard.unmarkColumn();
                     currentBestMove = this.columns / 2;
                 } else {
                     for (int i = 0; i < this.columns; i++) {
                         if (!B.fullColumn(this.moveOrder[i])) {
-                            B.markColumn(this.moveOrder[i]);
-                            int score = alphaBetaMin(B, alpha, beta, depth);
-                            B.unmarkColumn();
-                            // System.err.println("Move: " + this.moveOrder[i]);
-                            System.err.println("Score: " + score);
-                            // System.err.println("Alpha: " + alpha);
+                            newBoard.markColumn(this.moveOrder[i]);
+                            int score = alphaBetaMin(newBoard, alpha, beta, depth);
+                            newBoard.unmarkColumn();
+                            // System.err.println("Score: " + score);
                             if (score > alpha) {
                                 alpha = score;
                                 currentBestMove = this.moveOrder[i];
-                                // System.err.println("Move changed: ");
                             }
                         }
                     }
@@ -134,14 +127,15 @@ public class L5 implements CXPlayer {
             }
             return bestMove;
         } catch (TimeoutException e) {
-            System.err.println("Depth reached: " + (depth));
-            System.err.println("Transposition table hits: " + transpositionTableHits);
-            System.err.println("Transposition table misses: " + transpositionTableMisses);
+            // System.err.println("Depth reached: " + (depth));
+            // System.err.println("Transposition table hits: " + transpositionTableHits);
+            // System.err.println("Transposition table misses: " + transpositionTableMisses);
             // se non ho trovato una mossa valida, gioco random
-            while (bestMove == -1 || B.fullColumn(bestMove))
+            // System.err.println("posti liberi nella colonna: " + B.RP[bestMove]);
+            while (bestMove == -1 || B.fullColumn(bestMove)) {
+                // System.err.println("Randm move" + bestMove);
                 bestMove = random.nextInt(this.columns);
-
-            // System.err.println("bestMove: " + bestMove);
+            }
             return bestMove;
         }
     }
