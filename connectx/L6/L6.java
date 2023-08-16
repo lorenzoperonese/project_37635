@@ -32,6 +32,7 @@ public class L6 implements CXPlayer {
     boolean amIfirst;
     boolean timeIsRunningOut;
     int[][] scoreMove;
+    int depth;
 
     public L6() {
     }
@@ -40,13 +41,12 @@ public class L6 implements CXPlayer {
         this.rows = M;
         this.columns = N;
         this.symbols = K;
-        if(first) {
+        if (first) {
             this.myWin = CXGameState.WINP1;
             this.yourWin = CXGameState.WINP2;
             this.player = CXCellState.P1;
             this.opponent = CXCellState.P2;
-        }
-        else {
+        } else {
             this.myWin = CXGameState.WINP2;
             this.yourWin = CXGameState.WINP1;
             this.player = CXCellState.P2;
@@ -54,8 +54,8 @@ public class L6 implements CXPlayer {
         }
         this.TIMEOUT = timeout_in_secs;
         this.moveOrder = new Integer[100];
-        for(int i=0;i<this.columns;i++)
-            this.moveOrder[i]= this.columns/2 + (1-2*(i%2))*(i+1)/2; // 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
+        for (int i = 0; i < this.columns; i++)
+            this.moveOrder[i] = this.columns / 2 + (1 - 2 * (i % 2)) * (i + 1) / 2; // 0 -> N/2, 1 -> N/2 -1, 2 -> N/2 +1
         random = new Random();
         this.zobristKeys = new long[this.rows][this.columns][3];
         for (int i = 0; i < this.rows; i++) {
@@ -80,7 +80,8 @@ public class L6 implements CXPlayer {
                 this.scoreMove[this.rows - 1 - i][this.columns - 1 - j] = value;
             }
         }
-        if (first) {
+        // stampa dello score delle celle
+        if (false) {
             for (int row = 0; row < this.rows; row++) {
                 for (int col = 0; col < this.columns; col++) {
                     System.err.print(this.scoreMove[row][col] + "\t");
@@ -88,6 +89,7 @@ public class L6 implements CXPlayer {
                 System.err.println();
             }
         }
+        this.depth = 0;
     }
 
     private void checktime() throws TimeoutException {
@@ -101,25 +103,32 @@ public class L6 implements CXPlayer {
     }
 
     public int selectColumn(CXBoard B) {
-        System.err.println("Score totale:" + evaluate(B));
+        // TMP for debug
+        evaluate(B);
         Scanner scanner = new Scanner(System.in);
         if(true)
             return scanner.nextInt();
+        // end of TMP
         this.timeIsRunningOut = false;
         this.START = System.currentTimeMillis();
-        int depth = amIfirst ? 0 : 1;
+        int iterativeDepth;
+        if(this.depth == 0)
+            iterativeDepth = amIfirst ? 0 : 1;
+        else
+            iterativeDepth = this.depth - 2;
         int bestMove = -1;
         int currentBestMove = -1;
         try {
-            while(depth < this.columns * this.rows - B.numOfMarkedCells()) {
-                depth += 2;
+            while(iterativeDepth < this.columns * this.rows - B.numOfMarkedCells()) {
+                iterativeDepth += 2;
                 currentBestMove = alphaBetaSearch(B, depth);
                 if(currentBestMove != -1)
                     bestMove = currentBestMove;
             }
         } catch (TimeoutException e) {
-            System.out.println("Depth reached: " + depth);
+            System.out.println("Depth reached: " + iterativeDepth);
             // System.err.println("change");
+            this.depth = iterativeDepth - 2;
             return bestMove;
         }
         //System.err.println("change");
@@ -205,49 +214,7 @@ public class L6 implements CXPlayer {
             int emptyCellsL = 0;
             int streakL = 0;
             CXCellState cs;
-            // score righe FUNZIONANTE (NON PROPRIO)
-            // problema 1: PWPWPWP se symbols = 5, score = 4^2 (dovrebbe essere 3^2 perchè mancano due pedine per chiudere)
-            // problema 2: PWWWWWWWWWP per il computer sono collegati e quindi score = 2^2, mentre dovrebbe essere 1+1
-            /*
-            for (int i = 0; i < this.rows; i++) {
-                for (int j = 0; j < this.columns; j++) {
-                    cs = board.cellState(i, j);
-                    if (cs == this.player) {
-                        streakW++;
-                        if (streakL > 0) {
-                            if (emptyCellsL + streakL >= this.symbols)
-                                score -= streakL * streakL;
-                            streakL = 0;
-                            emptyCellsL = 0;
-                        }
-                    } else if (cs == this.opponent) {
-                        streakL++;
-                        if (streakW > 0) {
-                            if (emptyCellsW + streakW >= this.symbols)
-                                score += streakW * streakW;
-                            streakW = 0;
-                            emptyCellsW = 0;
-                        }
-                    }
-                        else {
-                            emptyCellsW++;
-                            emptyCellsL++;
-                        }
-                    }
-                if (streakL > 0) {
-                    if (emptyCellsL + streakL >= this.symbols)
-                        score -= streakL * streakL;
-                }
-                if (streakW > 0) {
-                    if (emptyCellsW + streakW >= this.symbols)
-                        score += streakW * streakW;
-                }
-                emptyCellsW = 0;
-                streakW = 0;
-                streakL = 0;
-                emptyCellsL = 0;
-            } */
-            // IDEA NUOVA: controllo i primi symbols elementi (se sono tutti player o white, streakW++),
+            // Controllo i primi 'symbols'-elementi (se sono tutti player o white, streakW++),
             // poi j++ e controllo da j a j+symbols, fino a columns-symbols-1 (FUNZIONANTE)
             int j=0;
             int contPl = 0;
@@ -259,7 +226,7 @@ public class L6 implements CXPlayer {
                             contPl++;
                         else if(board.cellState(i, j+k) == this.opponent)
                             contOpp++;
-                        }
+                    }
                     if(contPl == 0 && contOpp > 0)
                         score -= contOpp * contOpp;
                     else if(contPl > 0 && contOpp == 0)
@@ -272,7 +239,7 @@ public class L6 implements CXPlayer {
             }
 
             // score colonne FUNZIONANTE
-            for (int j = 0; j < this.columns; j++) {
+            for (j = 0; j < this.columns; j++) {
                 int i = 0;
                 while (board.cellState(i, j) == CXCellState.FREE && i < this.rows -1) {
                     emptyCellsW++;
@@ -302,138 +269,168 @@ public class L6 implements CXPlayer {
                 streakL = 0;
                 streakW = 0;
                 emptyCellsW = 0;
-            } /*
-            // score diagonali
-            for (int i = this.rows - 1; i >= this.symbols - 1; i--) {
-                for (int k = 0; k < Math.min(this.columns, i+1); k++) {
-                    cs = board.cellState(i - k, k);
-                    if (cs == this.player) {
-                        streakW++;
-                        if (streakL > 0) {
-                            if (emptyCellsL + streakL >= this.symbols)
-                                score -= streakL * streakL;
-                            streakL = 0;
-                            emptyCellsL = 0;
-                        }
-                    }
-                    else if (cs == this.opponent) {
-                        streakL++;
-                        if (streakW > 0) {
-                            if (emptyCellsW + streakW >= this.symbols)
-                                score += streakW * streakW;
-                            streakW = 0;
-                            emptyCellsW = 0;
-                        }
-                    }
-                    else {
-                        emptyCellsW++;
-                        emptyCellsL++;
-                    }
-                }
-                if (streakL > 0) {
-                    if (emptyCellsL + streakL >= this.symbols)
-                        score -= streakL * streakL;
-                }
-                if (streakW > 0) {
-                    if (emptyCellsW + streakW >= this.symbols)
-                        score += streakW * streakW;
-                }
-                emptyCellsW = 0;
-                streakW = 0;
-                streakL = 0;
-                emptyCellsL = 0;
             }
-
-            for (int j = 1; j < this.columns - this.symbols + 1; j++) {
-                for (int k = 0; k < Math.min(this.columns - j - 1, this.rows); k++) {
-                    if (board.cellState(this.rows - k - 1, j + k) == this.player) {
-                        streakW++;
-                        if (streakL > 0) {
-                            if (emptyCellsL + streakL >= this.symbols)
-                                score -= streakL * streakL;
-                            streakL = 0;
-                            emptyCellsL = 0;
-                        } else if (board.cellState(this.rows - k - 1, j + k) == this.opponent) {
-                            streakL++;
-                            if (streakW > 0) {
-                                if (emptyCellsW + streakW >= this.symbols)
-                                    score += streakW * streakW;
-                                streakW = 0;
-                                emptyCellsW = 0;
-                            }
-                        } else {
-                            emptyCellsW++;
-                            emptyCellsL++;
-                        }
-                    }
-                }
-                emptyCellsW = 0;
-                streakW = 0;
-                streakL = 0;
-                emptyCellsL = 0;
-            }
+            int tmp = 0;
             /*
-            // score anti-diagonali
-            for (int i = this.rows - 1; i >= this.symbols - 1; i--) {
-                for (int k = 0; k < Math.min(i, Math.min(this.columns, this.rows)); k++) {
-                    if (board.cellState(i - k, this.columns - k) == this.player) {
-                        streakW++;
-                        if (streakL > 0) {
-                            if (emptyCellsL + streakL >= this.symbols)
-                                score -= streakL * streakL;
-                            streakL = 0;
-                            emptyCellsL = 0;
-                        } else if (board.cellState(i - k, this.columns - k) == this.opponent) {
-                            streakL++;
-                            if (streakW > 0) {
-                                if (emptyCellsW + streakW >= this.symbols)
-                                    score += streakW * streakW;
-                                streakW = 0;
-                                emptyCellsW = 0;
-                            }
-                        } else {
-                            emptyCellsW++;
-                            emptyCellsL++;
-                        }
-                    }
+            ----X
+            ---X-
+            --X--
+            -X---
+            X----
+            [ left ]
+             */
+            for (int i = 0; i < this.rows; i++) {
+                int r = i, c = 0;
+                while (r >= 0 && c < this.columns) {
+                    tmp++;
+                    r--;
+                    c++;
                 }
-                emptyCellsW = 0;
-                streakW = 0;
-                streakL = 0;
-                emptyCellsL = 0;
-            }
-
-            for (int j = this.columns -1; j <= this.symbols -1; j++) {
-                for (int k = 0; k < Math.min((this.columns - j - 1), Math.min(this.columns, this.rows)); k++) {
-                    if (board.cellState(this.rows - 1, j - k) == this.player) {
-                        streakW++;
-                        if (streakL > 0) {
-                            if (emptyCellsL + streakL >= this.symbols)
-                                score -= streakL * streakL;
-                            streakL = 0;
-                            emptyCellsL = 0;
-                        } else if (board.cellState(this.rows - 1, j - k) == this.opponent) {
-                            streakL++;
-                            if (streakW > 0) {
-                                if (emptyCellsW + streakW >= this.symbols)
-                                    score += streakW * streakW;
-                                streakW = 0;
-                                emptyCellsW = 0;
-                            }
-                        } else {
-                            emptyCellsW++;
-                            emptyCellsL++;
+                r = i;
+                c = 0;
+                if(tmp >= this.symbols)
+                    while (r >= this.symbols && c < this.columns - this.symbols +1) {
+                        for(int k=0;k<this.symbols;k++) {
+                            if(board.cellState(r,c) == this.player)
+                                contPl ++;
+                            else if(board.cellState(r,c) == this.opponent)
+                                contOpp ++;
+                            r--;
+                            c++;
                         }
+                        if(contPl == 0 && contOpp > 0)
+                            score -= contOpp * contOpp;
+                        else if(contPl > 0 && contOpp == 0)
+                            score += contPl * contPl;
+                        contPl = 0;
+                        contOpp = 0;
+                        r = r + this.symbols - 1;
+                        c = c - this.symbols + 1;
                     }
-                }
-                emptyCellsW = 0;
-                streakW = 0;
-                streakL = 0;
-                emptyCellsL = 0;
+                tmp = 0;
             }
-
-            score = score * score; */
+            System.err.println("diagonal left score: " + score);
+            score = 0;
+            /*
+            ----X
+            ---X-
+            --X--
+            -X---
+            X----
+            [ right ]
+             */
+            for (j = 1; j < this.columns; j++) {
+                int r = this.rows - 1, c = j;
+                while (r >= 0 && c < this.columns) {
+                    tmp++;
+                    r--;
+                    c++;
+                }
+                r = this.rows - 1;
+                c = j;
+                if(tmp >= this.symbols)
+                    while (r >= this.symbols && c < this.columns - this.symbols +1) {
+                        for(int k=0;k<this.symbols;k++) {
+                            if(board.cellState(r,c) == this.player)
+                                contPl ++;
+                            else if(board.cellState(r,c) == this.opponent)
+                                contOpp ++;
+                            r--;
+                            c++;
+                        }
+                        if(contPl == 0 && contOpp > 0)
+                            score -= contOpp * contOpp;
+                        else if(contPl > 0 && contOpp == 0)
+                            score += contPl * contPl;
+                        contPl = 0;
+                        contOpp = 0;
+                        r = r + this.symbols - 1;
+                        c = c - this.symbols + 1;
+                    }
+                tmp = 0;
+            }
+            System.err.println("diagonal right score: " + score);
+            score = 0;
+            /*
+            X----
+            -X---
+            --X--
+            ---X-
+            ----X
+            [ right ]
+             */
+            for (int i = 0; i < this.rows; i++) {
+                int r = i, c = this.columns - 1;
+                while (r >= 0 && c >= 0) {
+                    tmp++;
+                    r--;
+                    c--;
+                }
+                r=i;
+                c=this.columns-1;
+                if(tmp >= this.symbols)
+                    while (r > this.symbols && c > this.symbols) {
+                        for(int k=0;k<this.symbols;k++) {
+                            if(board.cellState(r,c) == this.player)
+                                contPl ++;
+                            else if(board.cellState(r,c) == this.opponent)
+                                contOpp ++;
+                            r--;
+                            c--;
+                        }
+                        if(contPl == 0 && contOpp > 0)
+                            score -= contOpp * contOpp;
+                        else if(contPl > 0 && contOpp == 0)
+                            score += contPl * contPl;
+                        contPl = 0;
+                        contOpp = 0;
+                        r = r + this.symbols - 1;
+                        c = c + this.symbols - 1;
+                    }
+                tmp = 0;
+            }
+            System.err.println("anti-diagonal right score: " + score);
+            score = 0;
+            /*
+            X----
+            -X---
+            --X--
+            ---X-
+            ----X
+            [ left ]
+             */
+            for (j = 0; j <this.columns -1; j++) {
+                int r = this.rows - 1, c = j;
+                while (r >= 0 && c >= 0) {
+                    tmp++;
+                    r--;
+                    c--;
+                }
+                r = this.rows - 1;
+                c = j;
+                if(tmp >= this.symbols)
+                    while (r >= this.symbols && c >= this.symbols) {
+                        for(int k=0;k<this.symbols;k++) {
+                            if(board.cellState(r,c) == this.player)
+                                contPl ++;
+                            else if(board.cellState(r,c) == this.opponent)
+                                contOpp ++;
+                            r--;
+                            c--;
+                        }
+                        if(contPl == 0 && contOpp > 0)
+                            score -= contOpp * contOpp;
+                        else if(contPl > 0 && contOpp == 0)
+                            score += contPl * contPl;
+                        contPl = 0;
+                        contOpp = 0;
+                        r = r + this.symbols - 1;
+                        c = c + this.symbols - 1;
+                    }
+                tmp = 0;
+            }
         }
+        System.err.println("anti-diagonal left score: " + score);
         return score;
     }
 
