@@ -35,7 +35,6 @@ public class L6 implements CXPlayer {
     int transpositionTableHits;
     int transpositionTableMisses;
     boolean firstMove;
-    int[] table;
 
     public L6() {
     }
