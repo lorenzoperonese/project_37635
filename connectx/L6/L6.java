@@ -7,7 +7,6 @@ import connectx.CXCellState;
 import connectx.CXGameState;
 import connectx.CXPlayer;
 import connectx.CXBoard;
-import connectx.L5.Score_Depth;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +35,7 @@ public class L6 implements CXPlayer {
     int transpositionTableHits;
     int transpositionTableMisses;
     boolean firstMove;
+    int[] table;
 
     public L6() {
     }
@@ -124,18 +124,18 @@ public class L6 implements CXPlayer {
                     bestMove = currentBestMove;
             }
         } catch (TimeoutException e) {
-            System.out.println("Depth reached: " + (iterativeDepth -2));
+            // System.err.println("Depth reached: " + (iterativeDepth -2));
             // System.err.println("change");
-            System.err.println("Transposition table hits: " + this.transpositionTableHits);
-            System.err.println("Transposition table misses: " + this.transpositionTableMisses);
+            // System.err.println("Transposition table hits: " + this.transpositionTableHits);
+            // System.err.println("Transposition table misses: " + this.transpositionTableMisses);
             this.transpositionTableHits = 0;
             this.transpositionTableMisses = 0;
             if(firstMove) this.depth = iterativeDepth - 2;
             return bestMove;
         }
         //System.err.println("change");
-        System.err.println("Transposition table hits: " + this.transpositionTableHits);
-        System.err.println("Transposition table misses: " + this.transpositionTableMisses);
+        // System.err.println("Transposition table hits: " + this.transpositionTableHits);
+        // System.err.println("Transposition table misses: " + this.transpositionTableMisses);
         this.transpositionTableHits = 0;
         this.transpositionTableMisses = 0;
         this.depth = iterativeDepth;
@@ -436,7 +436,7 @@ public class L6 implements CXPlayer {
         if (timeIsRunningOut)
             return;
         long hash = computeHash(board);
-        connectx.L5.Score_Depth sd = new Score_Depth(score, depth);
+        Score_Depth sd = new Score_Depth(score, depth);
         transpositionTable.put(hash, sd);
     }
 
