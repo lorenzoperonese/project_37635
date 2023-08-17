@@ -33,6 +33,9 @@ public class L6 implements CXPlayer {
     boolean timeIsRunningOut;
     int[][] scoreMove;
     int depth;
+    int transpositionTableHits;
+    int transpositionTableMisses;
+    boolean firstMove;
 
     public L6() {
     }
@@ -73,7 +76,7 @@ public class L6 implements CXPlayer {
         for (int i = 0; i <= this.rows / 2; i++) {
             for (int j = 0; j <= this.columns / 2; j++) {
                 int distance = Math.abs(this.rows / 2 - i) + Math.abs(this.columns / 2 - j);
-                int value = -(int) Math.pow(distance + 1, 3) / (this.rows * this.columns);
+                int value = 0; //-(int) Math.pow(distance + 1, 3) / (this.rows * this.columns);
                 this.scoreMove[i][j] = value;
                 this.scoreMove[this.rows - 1 - i][j] = value;
                 this.scoreMove[i][this.columns - 1 - j] = value;
@@ -90,11 +93,14 @@ public class L6 implements CXPlayer {
             }
         }
         this.depth = 0;
+        this.transpositionTableHits = 0;
+        this.transpositionTableMisses = 0;
+        this.firstMove = true;
     }
 
     private void checktime() throws TimeoutException {
 
-        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (99.0 / 100.0)) {
+        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (95.0 / 100.0)) {
             // System.err.println("time");
             timeIsRunningOut = true;
             throw new TimeoutException();
@@ -103,35 +109,36 @@ public class L6 implements CXPlayer {
     }
 
     public int selectColumn(CXBoard B) {
-        // TMP for debug
-        evaluate(B);
-        Scanner scanner = new Scanner(System.in);
-        if(true)
-            return scanner.nextInt();
-        // end of TMP
         this.timeIsRunningOut = false;
         this.START = System.currentTimeMillis();
         int iterativeDepth;
-        if(this.depth == 0)
-            iterativeDepth = amIfirst ? 0 : 1;
-        else
-            iterativeDepth = this.depth - 2;
+        // se non è la prima mossa, inizio alla profondità a cui mi sono fermato prima (-2 per sicurezza)
+        iterativeDepth = firstMove ? (amIfirst ? 0 : 1) : this.depth -2;
         int bestMove = -1;
         int currentBestMove = -1;
         try {
-            while(iterativeDepth < this.columns * this.rows - B.numOfMarkedCells()) {
+            while(iterativeDepth < this.columns * this.rows - B.numOfMarkedCells() +1) {
                 iterativeDepth += 2;
-                currentBestMove = alphaBetaSearch(B, depth);
+                currentBestMove = alphaBetaSearch(B, iterativeDepth);
                 if(currentBestMove != -1)
                     bestMove = currentBestMove;
             }
         } catch (TimeoutException e) {
-            System.out.println("Depth reached: " + iterativeDepth);
+            System.out.println("Depth reached: " + (iterativeDepth -2));
             // System.err.println("change");
-            this.depth = iterativeDepth - 2;
+            System.err.println("Transposition table hits: " + this.transpositionTableHits);
+            System.err.println("Transposition table misses: " + this.transpositionTableMisses);
+            this.transpositionTableHits = 0;
+            this.transpositionTableMisses = 0;
+            if(firstMove) this.depth = iterativeDepth - 2;
             return bestMove;
         }
         //System.err.println("change");
+        System.err.println("Transposition table hits: " + this.transpositionTableHits);
+        System.err.println("Transposition table misses: " + this.transpositionTableMisses);
+        this.transpositionTableHits = 0;
+        this.transpositionTableMisses = 0;
+        this.depth = iterativeDepth;
         return bestMove;
     }
 
@@ -159,8 +166,11 @@ public class L6 implements CXPlayer {
     int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft) throws TimeoutException {
         checktime();
         int transpositionScore = lookupTranspositionTable(B, depthleft);
-        if (transpositionScore != Integer.MIN_VALUE)
+        if (transpositionScore != Integer.MIN_VALUE) {
+            this.transpositionTableHits++;
             return transpositionScore;
+        }
+        this.transpositionTableMisses++;
         if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
         for (int i = 0; i < this.columns; i++) {
             if (!B.fullColumn(this.moveOrder[i])) {
@@ -209,13 +219,13 @@ public class L6 implements CXPlayer {
                     else if (board.cellState(i, j) == this.opponent)
                         score -= this.scoreMove[i][j];
                 }
+
+            // score righe
             int emptyCellsW = 0;
             int streakW = 0;
             int emptyCellsL = 0;
             int streakL = 0;
             CXCellState cs;
-            // Controllo i primi 'symbols'-elementi (se sono tutti player o white, streakW++),
-            // poi j++ e controllo da j a j+symbols, fino a columns-symbols-1 (FUNZIONANTE)
             int j=0;
             int contPl = 0;
             int contOpp = 0;
@@ -238,7 +248,7 @@ public class L6 implements CXPlayer {
                 j=0;
             }
 
-            // score colonne FUNZIONANTE
+            // score colonne
             for (j = 0; j < this.columns; j++) {
                 int i = 0;
                 while (board.cellState(i, j) == CXCellState.FREE && i < this.rows -1) {
@@ -270,7 +280,8 @@ public class L6 implements CXPlayer {
                 streakW = 0;
                 emptyCellsW = 0;
             }
-            int tmp = 0;
+
+            // score diagonali
             /*
             ----X
             ---X-
@@ -281,36 +292,26 @@ public class L6 implements CXPlayer {
              */
             for (int i = 0; i < this.rows; i++) {
                 int r = i, c = 0;
-                while (r >= 0 && c < this.columns) {
-                    tmp++;
-                    r--;
-                    c++;
-                }
-                r = i;
-                c = 0;
-                if(tmp >= this.symbols)
-                    while (r >= this.symbols && c < this.columns - this.symbols +1) {
-                        for(int k=0;k<this.symbols;k++) {
-                            if(board.cellState(r,c) == this.player)
-                                contPl ++;
-                            else if(board.cellState(r,c) == this.opponent)
-                                contOpp ++;
-                            r--;
-                            c++;
-                        }
-                        if(contPl == 0 && contOpp > 0)
-                            score -= contOpp * contOpp;
-                        else if(contPl > 0 && contOpp == 0)
-                            score += contPl * contPl;
-                        contPl = 0;
-                        contOpp = 0;
-                        r = r + this.symbols - 1;
-                        c = c - this.symbols + 1;
+                while (r >= this.symbols -1 && c < this.columns - this.symbols +1) {
+                    for(int k=0;k<this.symbols;k++) {
+                        if(board.cellState(r,c) == this.player)
+                            contPl ++;
+                        else if(board.cellState(r,c) == this.opponent)
+                            contOpp ++;
+                        r--;
+                        c++;
                     }
-                tmp = 0;
+                    if(contPl == 0 && contOpp > 0)
+                        score -= contOpp * contOpp;
+                    else if(contPl > 0 && contOpp == 0)
+                        score += contPl * contPl;
+                    contPl = 0;
+                    contOpp = 0;
+                    r = r + this.symbols - 1;
+                    c = c - this.symbols + 1;
+                }
             }
-            System.err.println("diagonal left score: " + score);
-            score = 0;
+            // System.err.println("diagonal left score: " + score);
             /*
             ----X
             ---X-
@@ -321,36 +322,28 @@ public class L6 implements CXPlayer {
              */
             for (j = 1; j < this.columns; j++) {
                 int r = this.rows - 1, c = j;
-                while (r >= 0 && c < this.columns) {
-                    tmp++;
-                    r--;
-                    c++;
-                }
-                r = this.rows - 1;
-                c = j;
-                if(tmp >= this.symbols)
-                    while (r >= this.symbols && c < this.columns - this.symbols +1) {
-                        for(int k=0;k<this.symbols;k++) {
-                            if(board.cellState(r,c) == this.player)
-                                contPl ++;
-                            else if(board.cellState(r,c) == this.opponent)
-                                contOpp ++;
-                            r--;
-                            c++;
-                        }
-                        if(contPl == 0 && contOpp > 0)
-                            score -= contOpp * contOpp;
-                        else if(contPl > 0 && contOpp == 0)
-                            score += contPl * contPl;
-                        contPl = 0;
-                        contOpp = 0;
-                        r = r + this.symbols - 1;
-                        c = c - this.symbols + 1;
+                while (r >= this.symbols -1 && c < this.columns - this.symbols +1) {
+                    for(int k=0;k<this.symbols;k++) {
+                        if(board.cellState(r,c) == this.player)
+                            contPl ++;
+                        else if(board.cellState(r,c) == this.opponent)
+                            contOpp ++;
+                        r--;
+                        c++;
                     }
-                tmp = 0;
+                    if(contPl == 0 && contOpp > 0)
+                        score -= contOpp * contOpp;
+                    else if(contPl > 0 && contOpp == 0)
+                        score += contPl * contPl;
+                    contPl = 0;
+                    contOpp = 0;
+                    r = r + this.symbols - 1;
+                    c = c - this.symbols + 1;
+                }
             }
-            System.err.println("diagonal right score: " + score);
-            score = 0;
+            // System.err.println("diagonal right score: " + score);
+
+            // score anti-diagonali
             /*
             X----
             -X---
@@ -361,36 +354,26 @@ public class L6 implements CXPlayer {
              */
             for (int i = 0; i < this.rows; i++) {
                 int r = i, c = this.columns - 1;
-                while (r >= 0 && c >= 0) {
-                    tmp++;
-                    r--;
-                    c--;
-                }
-                r=i;
-                c=this.columns-1;
-                if(tmp >= this.symbols)
-                    while (r > this.symbols && c > this.symbols) {
-                        for(int k=0;k<this.symbols;k++) {
-                            if(board.cellState(r,c) == this.player)
-                                contPl ++;
-                            else if(board.cellState(r,c) == this.opponent)
-                                contOpp ++;
-                            r--;
-                            c--;
-                        }
-                        if(contPl == 0 && contOpp > 0)
-                            score -= contOpp * contOpp;
-                        else if(contPl > 0 && contOpp == 0)
-                            score += contPl * contPl;
-                        contPl = 0;
-                        contOpp = 0;
-                        r = r + this.symbols - 1;
-                        c = c + this.symbols - 1;
+                while (r >= this.symbols -1 && c >= this.symbols -1) {
+                    for(int k=0;k<this.symbols;k++) {
+                        if(board.cellState(r,c) == this.player)
+                            contPl ++;
+                        else if(board.cellState(r,c) == this.opponent)
+                            contOpp ++;
+                        r--;
+                        c--;
                     }
-                tmp = 0;
+                    if(contPl == 0 && contOpp > 0)
+                        score -= contOpp * contOpp;
+                    else if(contPl > 0 && contOpp == 0)
+                        score += contPl * contPl;
+                    contPl = 0;
+                    contOpp = 0;
+                    r = r + this.symbols - 1;
+                    c = c + this.symbols - 1;
+                }
             }
-            System.err.println("anti-diagonal right score: " + score);
-            score = 0;
+            // System.err.println("anti-diagonal right score: " + score);
             /*
             X----
             -X---
@@ -398,39 +381,30 @@ public class L6 implements CXPlayer {
             ---X-
             ----X
             [ left ]
-             */
+            */
             for (j = 0; j <this.columns -1; j++) {
                 int r = this.rows - 1, c = j;
-                while (r >= 0 && c >= 0) {
-                    tmp++;
-                    r--;
-                    c--;
-                }
-                r = this.rows - 1;
-                c = j;
-                if(tmp >= this.symbols)
-                    while (r >= this.symbols && c >= this.symbols) {
-                        for(int k=0;k<this.symbols;k++) {
-                            if(board.cellState(r,c) == this.player)
-                                contPl ++;
-                            else if(board.cellState(r,c) == this.opponent)
-                                contOpp ++;
-                            r--;
-                            c--;
-                        }
-                        if(contPl == 0 && contOpp > 0)
-                            score -= contOpp * contOpp;
-                        else if(contPl > 0 && contOpp == 0)
-                            score += contPl * contPl;
-                        contPl = 0;
-                        contOpp = 0;
-                        r = r + this.symbols - 1;
-                        c = c + this.symbols - 1;
+                while (r >= this.symbols -1 && c >= this.symbols -1) {
+                    for(int k=0;k<this.symbols;k++) {
+                        if(board.cellState(r,c) == this.player)
+                            contPl ++;
+                        else if(board.cellState(r,c) == this.opponent)
+                            contOpp ++;
+                        r--;
+                        c--;
                     }
-                tmp = 0;
+                    if(contPl == 0 && contOpp > 0)
+                        score -= contOpp * contOpp;
+                    else if(contPl > 0 && contOpp == 0)
+                        score += contPl * contPl;
+                    contPl = 0;
+                    contOpp = 0;
+                    r = r + this.symbols - 1;
+                    c = c + this.symbols - 1;
+                }
             }
         }
-        System.err.println("anti-diagonal left score: " + score);
+        // System.err.println("anti-diagonal left score: " + score);
         return score;
     }
 
