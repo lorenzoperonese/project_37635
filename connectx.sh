@@ -1,22 +1,29 @@
-# Elenco dei parametri da passare al programma Java
-parametri=("4 4 4" "5 4 4" "6 4 4" "7 4 4" "4 5 4" "5 5 4" "6 5 4" "7 5 4" "4 6 4")
+#!/bin/bash
 
-# File di output dove verranno salvati i risultati
-output_file="connectx_output.txt"
+# Connect X script for testing
+# Lorenzo Peronese
 
-# Assicurati che il file di output sia vuoto all'inizio
-> "$output_file"
+parametri=("4 4 4" "5 4 4" "6 4 4" "7 4 4" "4 5 4" "5 5 4" "6 5 4" "7 5 4" "4 6 4" "5 6 4" "6 6 4" "7 6 4" "4 7 4" "5 7 4" "6 7 4" "7 7 4" "5 4 5" "6 4 5" "7 4 5" "4 5 5" "5 5 5" "6 5 5" "7 5 5" "4 6 5" "5 6 5" "6 6 5" "7 6 5" "4 7 5" "5 7 5" "6 7 5" "7 7 5")
+parametri_grossi=("20 20 10" "30 30 10" "40 40 10" "50 50 10")
+output_file1="1.out"
+output_file2="2.out"
 
-# Loop sui parametri e esecuzione del programma Java per ciascun parametro
+> "$output_file1"
+> "$output_file2"
+
 for parametro in "${parametri[@]}"; do
-    echo "Esecuzione con parametro: $parametro"
-    echo "$parametro" >> "$output_file"
-    java -cp "/home/lorenzo/Projects/Algoritmi/project_37635" connectx.CXPlayerTester $parametro connectx.L4.L4 connectx.L1.L1 -r 10 >> "$output_file"
-    echo " " >> "$output_file"
-    java -cp "/home/lorenzo/Projects/Algoritmi/project_37635" connectx.CXPlayerTester $parametro connectx.L1.L1 connectx.L4.L4 -r 10 >> "$output_file"
-    echo "--------------------------------------" >> "$output_file"
+    echo "$parametro" >> "$output_file1"
+    echo "$parametro" >> "$output_file2"
+    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.L6.L6 connectx.MxLxPlayer.MxLxPlayer -v -r 100 >> "$output_file1"
+    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.MxLxPlayer.MxLxPlayer connectx.L6.L6 -v -r 100 >> "$output_file2"
+    echo "--------------------------------------" >> "$output_file1"
+    echo "--------------------------------------" >> "$output_file2"
 done
-
-echo "Tutte le esecuzioni sono state completate. I risultati sono stati salvati in $output_file"
-
-# java -cp ".." connectx.CXPlayerTester 5 5 4 connectx.L1.L1 connectx.L4.L4 -v -r 10
+for parametro in "${parametri_grossi[@]}"; do
+    echo "$parametro" >> "$output_file1"
+    echo "$parametro" >> "$output_file2"
+    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.L6.L6 connectx.MxLxPlayer.MxLxPlayer -v -r 25 >> "$output_file1"
+    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.MxLxPlayer.MxLxPlayer connectx.L6.L6 -v -r 25 >> "$output_file2"
+    echo "--------------------------------------" >> "$output_file1"
+    echo "--------------------------------------" >> "$output_file2"
+done
