@@ -34,7 +34,6 @@ public class L6 implements CXPlayer {
     int depth;
     int transpositionTableHits;
     int transpositionTableMisses;
-    boolean firstMove;
 
     public L6() {
     }
@@ -91,10 +90,9 @@ public class L6 implements CXPlayer {
                 System.err.println();
             }
         }
-        this.depth = 0;
+        this.depth = amIfirst? 0 : 1;
         this.transpositionTableHits = 0;
         this.transpositionTableMisses = 0;
-        this.firstMove = true;
     }
 
     private void checktime() throws TimeoutException {
@@ -112,7 +110,7 @@ public class L6 implements CXPlayer {
         this.START = System.currentTimeMillis();
         int iterativeDepth;
         // se non è la prima mossa, inizio alla profondità a cui mi sono fermato prima (-2 per sicurezza)
-        iterativeDepth = firstMove ? (amIfirst ? 0 : 1) : this.depth -2;
+        iterativeDepth = this.depth;
         int bestMove = -1;
         int currentBestMove = -1;
         try {
@@ -121,23 +119,22 @@ public class L6 implements CXPlayer {
                 currentBestMove = alphaBetaSearch(B, iterativeDepth);
                 if(currentBestMove != -1)
                     bestMove = currentBestMove;
+                else iterativeDepth -= 4;
             }
         } catch (TimeoutException e) {
-            // System.err.println("Depth reached: " + (iterativeDepth -2));
-            // System.err.println("change");
-            // System.err.println("Transposition table hits: " + this.transpositionTableHits);
-            // System.err.println("Transposition table misses: " + this.transpositionTableMisses);
-            this.transpositionTableHits = 0;
-            this.transpositionTableMisses = 0;
-            if(firstMove) this.depth = iterativeDepth - 2;
-            return bestMove;
+            //System.err.println("Depth reached: " + (iterativeDepth -2));
         }
-        //System.err.println("change");
         // System.err.println("Transposition table hits: " + this.transpositionTableHits);
         // System.err.println("Transposition table misses: " + this.transpositionTableMisses);
         this.transpositionTableHits = 0;
         this.transpositionTableMisses = 0;
-        this.depth = iterativeDepth;
+        // iterativeepth-6  ->  -2 perchè è la profondità reale raggiunta,
+        //                      -2 perchè appena entrato nel while aumento di 2,
+        //                      -2 per essere sicuro di vedere tutto l'albero a quella profondità
+        this.depth = timeIsRunningOut ? iterativeDepth-6 : this.rows * this.columns - B.numOfMarkedCells() - 3;
+        // posizione perdente, faccio una mossa random
+        while(bestMove == -1 && B.fullColumn(bestMove))
+            bestMove = Math.abs(random.nextInt()) % this.columns;
         return bestMove;
     }
 
@@ -158,7 +155,7 @@ public class L6 implements CXPlayer {
                 }
             }
         }
-        // System.err.println("Best: " + bestMove + " " + alpha);
+        //System.err.println("Best: " + bestMove + " " + alpha);
         return bestMove;
     }
 
@@ -209,6 +206,8 @@ public class L6 implements CXPlayer {
             score = Integer.MAX_VALUE;
         else if (board.gameState() == this.yourWin)
             score = Integer.MIN_VALUE;
+        else if (board.gameState() == CXGameState.DRAW)
+            score = 0;
         else {
             // score mosse
             for (int i = 0; i < this.rows; i++)
