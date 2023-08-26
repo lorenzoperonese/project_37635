@@ -19,7 +19,7 @@
 *.tar.gz
 *.rar
 
-# Clion users
+# IntelliJ users
 .idea
 *.iml
 
