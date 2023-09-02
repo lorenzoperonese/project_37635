@@ -28,12 +28,9 @@ public class L6 implements CXPlayer {
     Integer[] moveOrder;
     private long[][][] zobristKeys; // Matrice per memorizzare i valori Zobrist delle celle
     private Map<Long, Score_Depth> transpositionTable;
-    boolean amIfirst;
     boolean timeIsRunningOut;
     int[][] scoreMove;
     int depth;
-    int transpositionTableHits;
-    int transpositionTableMisses;
 
     public L6() {
     }
@@ -67,7 +64,6 @@ public class L6 implements CXPlayer {
             }
         }
         this.transpositionTable = new HashMap<>();
-        this.amIfirst = first;
         this.scoreMove = new int[this.rows][this.columns];
         // per la simmetria, riempio prima 1/4, poi copio nel resto della matrice
         // il valore delle mosse è dato da -d^3/(M*N), dove d è la distanza dal centro + 1
@@ -90,21 +86,17 @@ public class L6 implements CXPlayer {
                 System.err.println();
             }
         }
-        this.depth = amIfirst? 0 : 1;
-        this.transpositionTableHits = 0;
-        this.transpositionTableMisses = 0;
+        this.depth = 0;
     }
 
     private void checktime() throws TimeoutException {
 
-        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (95.0 / 100.0)) {
-            // System.err.println("time");
+        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT *(99.0/100.0) ) {
             timeIsRunningOut = true;
             throw new TimeoutException();
         }
-
     }
-
+    
     public int selectColumn(CXBoard B) {
         this.timeIsRunningOut = false;
         this.START = System.currentTimeMillis();
@@ -122,19 +114,16 @@ public class L6 implements CXPlayer {
                 else iterativeDepth -= 4;
             }
         } catch (TimeoutException e) {
-            //System.err.println("Depth reached: " + (iterativeDepth -2));
         }
-        // System.err.println("Transposition table hits: " + this.transpositionTableHits);
-        // System.err.println("Transposition table misses: " + this.transpositionTableMisses);
-        this.transpositionTableHits = 0;
-        this.transpositionTableMisses = 0;
         // iterativeepth-6  ->  -2 perchè è la profondità reale raggiunta,
         //                      -2 perchè appena entrato nel while aumento di 2,
         //                      -2 per essere sicuro di vedere tutto l'albero a quella profondità
         this.depth = timeIsRunningOut ? iterativeDepth-6 : this.rows * this.columns - B.numOfMarkedCells() - 3;
         // posizione perdente, faccio una mossa random
-        while(bestMove == -1 && B.fullColumn(bestMove))
-            bestMove = Math.abs(random.nextInt()) % this.columns;
+        while(bestMove == -1 || B.fullColumn(bestMove)) {
+            Integer[] a = B.getAvailableColumns();
+            bestMove = a[Math.abs(random.nextInt()) % B.getAvailableColumns().length];
+        }
         return bestMove;
     }
 
@@ -147,7 +136,6 @@ public class L6 implements CXPlayer {
             if (!B.fullColumn(this.moveOrder[i])) {
                 newBoard.markColumn(this.moveOrder[i]);
                 int score = alphaBetaMin(newBoard, alpha, beta, depth);
-                // System.err.println(this.moveOrder[i] + " " + score);
                 newBoard.unmarkColumn();
                 if (score > alpha) {
                     alpha = score;
@@ -155,18 +143,14 @@ public class L6 implements CXPlayer {
                 }
             }
         }
-        //System.err.println("Best: " + bestMove + " " + alpha);
         return bestMove;
     }
 
     int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft) throws TimeoutException {
         checktime();
         int transpositionScore = lookupTranspositionTable(B, depthleft);
-        if (transpositionScore != Integer.MIN_VALUE) {
-            this.transpositionTableHits++;
+        if (transpositionScore != Integer.MIN_VALUE)
             return transpositionScore;
-        }
-        this.transpositionTableMisses++;
         if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
         for (int i = 0; i < this.columns; i++) {
             if (!B.fullColumn(this.moveOrder[i])) {
@@ -210,13 +194,14 @@ public class L6 implements CXPlayer {
             score = 0;
         else {
             // score mosse
-            for (int i = 0; i < this.rows; i++)
+            /* for (int i = 0; i < this.rows; i++)
                 for (int j = 0; j < this.columns; j++) {
                     if (board.cellState(i, j) == this.player)
                         score += this.scoreMove[i][j];
                     else if (board.cellState(i, j) == this.opponent)
                         score -= this.scoreMove[i][j];
                 }
+                */
 
             // score righe
             int emptyCellsW = 0;

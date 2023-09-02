@@ -5,6 +5,12 @@
 \selectlanguage{italian}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{siunitx}
+\usepackage{changepage}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{array}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
 
 \newdate{date}{3}{09}{2023}
 \title{\textsc{Kebabo}\\
@@ -128,7 +134,7 @@ La versione definitiva del giocatore utilizza l'algoritmo \textsc{MiniMax} con
 potatura \textsc{Alpha-Beta} per esplorare l'albero delle mosse possibili.
 Per aumentare i tagli di AlphaBeta, è stato aggiunto un semplice \textsc{move explorator
 order}, che garantisce spesso di trovare la mossa migliore tra le prime analizzate e
-fa uso inoltre di una \textsc{abella delle trasposizioni} per memorizzare il
+fa uso inoltre di una \textsc{tabella delle trasposizioni} per memorizzare il
 punteggio delle posizioni che vengono incontrate. 
 
 La ricerca \textsc{Iterative Deepening}
@@ -152,8 +158,8 @@ attuale, supponendo che entrambi i giocatori facciano sempre le scelte migliori.
 
 Se l'algoritmo riesce ad esplorare l'intero Game Tree, sappiamo per certo che sceglierà la mossa 
 migliore, ma purtroppo, soprattutto con configurazioni grandi, è molto difficile che questo accada; 
-infatti, il numero di nodi visitati in una partita con $m$ mosse e $n$ turni è limitato da
-$O(m^n$).
+infatti, in una board $m \cdot n$, ogni cella può assumere 3 valori (\verb!P1, P2, FREE!) e quindi 
+il numero di nodi dell'albero di gioco è pari a $3^{nm}$.
 
 La \textsc{potatura AlphaBeta} permette di tagliare alcuni rami dell'albero di gioco che non sono 
 interessanti: ad esempio se il giocatore A massimizza e la prima mossa gli da un certo punteggio, se
@@ -166,7 +172,7 @@ Questa miglioria incide sulle prestazioni sulla base di un fattore: \textsc{l'or
 Visitando prima le mosse che si riveleranno poi migliori, il numero dei tagli sarà molto maggiore,
 mentre con l'ordinamento opposto non ci sarà nessun taglio e il costo computazionale sarà uguale a 
 quello di MiniMax. Infatti, ipotizzando un ordinamento delle mosse ottimale, il numero di nodi visitati
-in una partita con $m$ mosse e $n$ turni ha come upper bound $O(\sqrt{m^n})$.
+in una partita sarà $\sqrt{3^{mn}}$.
 \pagebreak
 
 \begin{algorithm}[H]
@@ -281,6 +287,11 @@ Inoltre, se al crescere della profondità il giocatore si accorge che non ha mod
 gioca l'ultima mossa migliore valida per cercare di prolungare il più possibile la partita, sperando
 in un errore avversario.
 
+Nonostante il costo computazionale dell'algoritmo sia uguale ad AlphaBeta, perchè quello che incide
+è il costo dell'ultima profondità cercata, IterativeDeepening svolge più operazioni di ricerca a
+diverse profondità e pertanto il suo costo computazionale ha delle costanti moltiplicative che
+nella pratica lo rendono complessivamente più lento.
+
 \begin{algorithm}[H]
   \caption{\textsc{Iterative Deepening}}
   \label{alg:itdeepening}
@@ -314,6 +325,64 @@ che in futuro potrebbero portare alla vittoria, e dare un punteggio pari al nume
 elevato al quadrato. Lo score della posizione è dato dunque dalla differenza tra il punteggio delle serie
 aperte del giocatore e quelle dell'avversario.
 
+Più nel dettaglio, ogni riga di lunghezza $n$ viene divisa in $n - x +1$ sottogruppi ordinati di lunghezza $x$ 
+(dove $x$ è il numero di simboli da allineare), come da schema:
+
+\vspace{10pt}
+{\centering
+{\noindent
+\begin{tabularx}{7cm}{@{}|C|C|C|C|C|C|C|}
+  \hline
+  {1} & {2} & {3} & {4} & {5} & {6} & {7}\\
+  \hline
+  \end{tabularx} \par
+}
+}
+\vspace{5pt}
+\begin{adjustwidth}{2.56cm}{}
+  \begin{tabularx}{4cm}{|C|C|C|C|}
+  \hline
+  1 & 2 & 3 & 4 \\
+  \hline
+  \end{tabularx}
+  \end{adjustwidth}
+
+\begin{adjustwidth}{3.56cm}{}
+  \begin{tabularx}{4cm}{|C|C|C|C|}
+  \hline
+  2 & 3 & 4 & 5 \\
+  \hline
+  \end{tabularx}
+  \end{adjustwidth}
+
+\begin{adjustwidth}{4.56cm}{}
+  \begin{tabularx}{4cm}{|C|C|C|C|}
+  \hline
+  3 & 4 & 5 & 6 \\
+  \hline
+  \end{tabularx}
+  \end{adjustwidth}
+
+\begin{adjustwidth}{5.56cm}{}
+  \begin{tabularx}{4cm}{|C|C|C|C|}
+  \hline
+  4 & 5 & 6 & 7 \\
+  \hline
+  \end{tabularx}
+  \end{adjustwidth}
+
+\vspace{10pt}
+Se in un sottogruppo ci sono pedine di entrambi i giocatori oppure le celle sono tutte vuote, allora il suo punteggio
+sarà $0$. Altrimenti, se ci sono solamente pedine di uno dei due giocatori e celle libere, il punteggio sarà dato dal
+numero di pedine al quadrato.
+
+Il metodo di assegnamento dello score di diagonali e andti-diagonali è molto simile a questo.
+
+Invece, per ogni colonna viene presa la cella non vuota più in alto
+e vengono contate le pedine consecutive dello stesso colore verso il basso; se il numero delle pedine consecutive,
+sommato al numero delle celle vuote soprastanti è maggiore o uguale al numero di simboli che bisogna allineare per vincere,
+allora quella serie sarà aperta e il punteggio verrà aggiornato di conseguenza.
+
 Oltre a questo, un'altra idea è stata quella di dare un numero di punti ad ogni cella della matrice
 in base alla posizione strategica, quindi più punti alle celle centrali e meno a quelle più esterne.
 
@@ -334,15 +403,30 @@ più punti; pertanto abbiamo deciso di mantenere la funzione originale ed elimin
       \ElsIf{$\Call{isDraw}$}
         \State \Return $0$
       \Else
-        \State \Return $\Call{rowScore}{board} + \Call{columnScore}{board} + 
-        \Call{diagonalScore}{board} + \Call{antiDiagonalScore}{board}$
+        \State \Return $\Call{diagonalScore}{board} + \Call{antiDiagonalScore}{board} + 
+        \Call{rowScore}{board} + \Call{columnScore}{board}$
       \EndIf
-    \EndProcedure      
+    \EndProcedure
   \end{algorithmic}
 \end{algorithm}
 
-\textsc{metto lo pseudocodice dell'euristica? Forse è un po' lunghetto}
-
 \section{Conclusioni}
+A causa dell'ordinamento della valutazione delle mosse non sempre ottimale, il costo 
+computazionale dell'algoritmo è compreso fra il costo di \textsc{MiniMax} $O(3^{nm})$ (ordinamento delle mosse
+pessimo) e quello di \textsc{AlphaBeta} $O({\sqrt{3^{nm}}})$ (ordinamento delle mosse ottimo). 
+
+A questo, va aggiunto il costo di \textsc{IterativeDeepening}, che però è di ordine inferiore e quindi 
+trascurabile a livello asintotico, e il costo della \textsc{valutazione euristica}; questa viene effettuata 
+per ogni nodo raggiunto (talvolta più volte per lo stesso nodo a profondità diverse) e il costo di una singola 
+valutazione è pari a $\Theta(mnx)$, con $m$ e $n$ numero di righe e colonne della matrice e $x$ numero di simboli
+da allineare per vincere.
+
+Infine, il costo di hashing per la \textsc{tabella delle trasposizioni} è costante.
+
+\section{Fonti}
+
+Per lo sviluppo del progetto abbiamo consultato i siti web \textit{chessprogramming.org}, che contiene
+diverse informazioni riguardo alla programmazione dei motori scacchistici e 
+\textit{blog.gamesolver.org}, il progetto di Pascal Pons per risolvere il gioco Connect 4.
 
 \end{document}
