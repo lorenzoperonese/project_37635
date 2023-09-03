@@ -1,7 +1,13 @@
-package connectx.L6;
+/*
+* Alma Mater Studiorum - University of Bologna
+* First cycle degree in Computer Science
+* Algorithms and data structures - 37635
+*
+* Authors: Peronese Lorenzo #0001081726
+           Ayache Omar #0001068895
+*/
 
-// MiniMax + AlphaBeta Pruning + Transposition Table
-// + Move Explorator Order + Iterative Deepening + Heuristic
+package connectx.Kebabo;
 
 import connectx.CXCellState;
 import connectx.CXGameState;
@@ -14,7 +20,7 @@ import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 import java.util.Random;
 
-public class L6 implements CXPlayer {
+public class Kebabo implements CXPlayer {
     private int TIMEOUT;
     private long START;
     private CXGameState myWin;
@@ -32,7 +38,7 @@ public class L6 implements CXPlayer {
     int[][] scoreMove;
     int depth;
 
-    public L6() {
+    public Kebabo() {
     }
 
     public void initPlayer(int M, int N, int K, boolean first, int timeout_in_secs) {
@@ -70,28 +76,18 @@ public class L6 implements CXPlayer {
         for (int i = 0; i <= this.rows / 2; i++) {
             for (int j = 0; j <= this.columns / 2; j++) {
                 int distance = Math.abs(this.rows / 2 - i) + Math.abs(this.columns / 2 - j);
-                int value = 0; //-(int) Math.pow(distance + 1, 3) / (this.rows * this.columns);
+                int value = -(int) Math.pow(distance + 1, 3) / (this.rows * this.columns);
                 this.scoreMove[i][j] = value;
                 this.scoreMove[this.rows - 1 - i][j] = value;
                 this.scoreMove[i][this.columns - 1 - j] = value;
                 this.scoreMove[this.rows - 1 - i][this.columns - 1 - j] = value;
             }
         }
-        // stampa dello score delle celle
-        if (false) {
-            for (int row = 0; row < this.rows; row++) {
-                for (int col = 0; col < this.columns; col++) {
-                    System.err.print(this.scoreMove[row][col] + "\t");
-                }
-                System.err.println();
-            }
-        }
         this.depth = 0;
     }
 
     private void checktime() throws TimeoutException {
-
-        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT *(99.0/100.0) ) {
+        if ((System.currentTimeMillis() - this.START) / 1000.0 >= this.TIMEOUT * (99.0 / 100.0)) {
             timeIsRunningOut = true;
             throw new TimeoutException();
         }
@@ -111,10 +107,14 @@ public class L6 implements CXPlayer {
                 currentBestMove = alphaBetaSearch(B, iterativeDepth);
                 if(currentBestMove != -1)
                     bestMove = currentBestMove;
-                else iterativeDepth -= 4;
+                else {
+                    if(iterativeDepth > 0)
+                        iterativeDepth -= 4;
+                    else
+                        break;
+                }
             }
-        } catch (TimeoutException e) {
-        }
+        } catch (TimeoutException e) {}
         // iterativeepth-6  ->  -2 perchè è la profondità reale raggiunta,
         //                      -2 perchè appena entrato nel while aumento di 2,
         //                      -2 per essere sicuro di vedere tutto l'albero a quella profondità
@@ -201,7 +201,7 @@ public class L6 implements CXPlayer {
                     else if (board.cellState(i, j) == this.opponent)
                         score -= this.scoreMove[i][j];
                 }
-                */
+            */
 
             // score righe
             int emptyCellsW = 0;
@@ -294,7 +294,6 @@ public class L6 implements CXPlayer {
                     c = c - this.symbols + 1;
                 }
             }
-            // System.err.println("diagonal left score: " + score);
             /*
             ----X
             ---X-
@@ -324,7 +323,6 @@ public class L6 implements CXPlayer {
                     c = c - this.symbols + 1;
                 }
             }
-            // System.err.println("diagonal right score: " + score);
 
             // score anti-diagonali
             /*
@@ -356,7 +354,7 @@ public class L6 implements CXPlayer {
                     c = c + this.symbols - 1;
                 }
             }
-            // System.err.println("anti-diagonal right score: " + score);
+
             /*
             X----
             -X---
@@ -387,7 +385,6 @@ public class L6 implements CXPlayer {
                 }
             }
         }
-        // System.err.println("anti-diagonal left score: " + score);
         return score;
     }
 
@@ -405,9 +402,10 @@ public class L6 implements CXPlayer {
 
     private int lookupTranspositionTable(CXBoard board, int depth) {
         long hash = computeHash(board);
-        // se l'hash della board attuale è nella table e è calcolato a una profondità
-        // maggiore o uguale a quella attuale oppure so che la mossa è vincente, lo ritorno
-        if (transpositionTable.containsKey(hash) && (transpositionTable.get(hash).getDepth() >= depth || transpositionTable.get(hash).getScore() == Integer.MAX_VALUE))
+        // se l'hash della board attuale è nella table e è calcolato a una profondità maggiore 
+        // o uguale a quella attuale oppure so che la mossa è un nodo terminale, lo ritorno
+        if (transpositionTable.containsKey(hash) && (transpositionTable.get(hash).getDepth() >= depth || transpositionTable.get(hash).getScore() == Integer.MAX_VALUE 
+        || transpositionTable.get(hash).getScore() == Integer.MIN_VALUE))
             return transpositionTable.get(hash).getScore();
         // valore che indica che la posizione non è presente nella tabella
         return Integer.MIN_VALUE;
@@ -424,6 +422,6 @@ public class L6 implements CXPlayer {
     }
 
     public String playerName() {
-        return "L6";
+        return "Kebabo";
     }
 }

@@ -1,4 +1,4 @@
-package connectx.L6;
+package connectx.Kebabo;
 
 public class Score_Depth {
     private int score;

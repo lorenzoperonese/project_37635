@@ -11,19 +11,21 @@ output_file2="2.out"
 > "$output_file1"
 > "$output_file2"
 
+make build
+
 for parametro in "${parametri[@]}"; do
     echo "$parametro" >> "$output_file1"
     echo "$parametro" >> "$output_file2"
-    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.L6.L6 connectx.L5.L5 -v -r 100 >> "$output_file1"
-    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.L5.L5 connectx.L6.L6 -v -r 100 >> "$output_file2"
+    make testv 1=Kebabo 2=L5 board="$parametro" reps=100 >> "$output_file1"
+    make testv 1=L5 2=Kebabo board="$parametro" reps=100 >> "$output_file2"
     echo "--------------------------------------" >> "$output_file1"
     echo "--------------------------------------" >> "$output_file2"
 done
 for parametro in "${parametri_grossi[@]}"; do
     echo "$parametro" >> "$output_file1"
     echo "$parametro" >> "$output_file2"
-    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.L6.L6 connectx.L5.L5 -v -r 25 >> "$output_file1"
-    java -cp "/home/students/lorenzo.peronese/ConnectX/project_37635" connectx.CXPlayerTester $parametro connectx.L5.L5 connectx.L6.L6 -v -r 25 >> "$output_file2"
+    make testv 1=Kebabo 2=L5 board="$parametro" reps=25 >> "$output_file1"
+    make testv 1=L5 2=Kebabo board="$parametro" reps=25 >> "$output_file2"
     echo "--------------------------------------" >> "$output_file1"
     echo "--------------------------------------" >> "$output_file2"
 done

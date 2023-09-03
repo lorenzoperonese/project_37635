@@ -10,6 +10,12 @@
 \usepackage{tabularx}
 \usepackage{enumitem}
 \usepackage{array}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks,
+  linkcolor=black,
+  urlcolor=blue
+}
 \newcolumntype{C}{>{\centering\arraybackslash}X}
 
 \newdate{date}{3}{09}{2023}
@@ -133,8 +139,8 @@ laboratorio, per il testing delle varie versioni del player.
 La versione definitiva del giocatore utilizza l'algoritmo \textsc{MiniMax} con 
 potatura \textsc{Alpha-Beta} per esplorare l'albero delle mosse possibili.
 Per aumentare i tagli di AlphaBeta, è stato aggiunto un semplice \textsc{move explorator
-order}, che garantisce spesso di trovare la mossa migliore tra le prime analizzate e
-fa uso inoltre di una \textsc{tabella delle trasposizioni} per memorizzare il
+order}, che garantisce spesso di trovare la mossa migliore tra le prime analizzate; inoltre
+fa uso di una \textsc{tabella delle trasposizioni} per memorizzare il
 punteggio delle posizioni che vengono incontrate. 
 
 La ricerca \textsc{Iterative Deepening}
@@ -145,8 +151,6 @@ Nelle board più grandi, questo non è sufficiente per esplorare l'intero albero
 perciò si rende necessaria una \textsc{funzione di valutazione} dei nodi non terminali, che
 si occupa di analizzare la posizione e assegnare un punteggio in base alle proprie 
 minacce e quelle dell'avversario.
-
-Per le implementazioni non banali viene fornito lo pseudocodice.
 
 \subsection{MiniMax-AlphaBeta}
 
@@ -159,7 +163,8 @@ attuale, supponendo che entrambi i giocatori facciano sempre le scelte migliori.
 Se l'algoritmo riesce ad esplorare l'intero Game Tree, sappiamo per certo che sceglierà la mossa 
 migliore, ma purtroppo, soprattutto con configurazioni grandi, è molto difficile che questo accada; 
 infatti, in una board $m \cdot n$, ogni cella può assumere 3 valori (\verb!P1, P2, FREE!) e quindi 
-il numero di nodi dell'albero di gioco è pari a $3^{nm}$.
+il numero di nodi dell'albero di gioco è pari a $3^{nm}$, anche se il valore reale è molto minore
+perchè molti nodi sono posizioni illegali a causa della gravità.
 
 La \textsc{potatura AlphaBeta} permette di tagliare alcuni rami dell'albero di gioco che non sono 
 interessanti: ad esempio se il giocatore A massimizza e la prima mossa gli da un certo punteggio, se
@@ -171,8 +176,8 @@ mai scelta, e possiamo quindi potarlo.
 Questa miglioria incide sulle prestazioni sulla base di un fattore: \textsc{l'ordinamento delle mosse}.
 Visitando prima le mosse che si riveleranno poi migliori, il numero dei tagli sarà molto maggiore,
 mentre con l'ordinamento opposto non ci sarà nessun taglio e il costo computazionale sarà uguale a 
-quello di MiniMax. Infatti, ipotizzando un ordinamento delle mosse ottimale, il numero di nodi visitati
-in una partita sarà $\sqrt{3^{mn}}$.
+quello di MiniMax. Infatti, ipotizzando un ordinamento delle mosse ottimale, AlphaBeta offre uno
+speed-up quadratico rispetto a MiniMax.
 \pagebreak
 
 \begin{algorithm}[H]
@@ -235,7 +240,8 @@ L'idea che sta alla base è che le colonne centrali sono quelle più strategiche
 più collegamenti, perciò è spesso vero che le mosse migliori sono quelle vicino al centro.
 
 L'array viene riempito in questa maniera:
-$$moveOrder[i] = columns / 2 + (1 - 2 \cdot (i \% 2)) \cdot (i + 1) / 2, \forall i \in \{0,columns-1\} $$
+
+$moveOrder[i] = columns / 2 + (1 - 2 \cdot (i $ mod $ 2)) \cdot (i + 1) / 2, \forall i \in \{0,columns-1\} $
 Il risultato sarà questo: 
 \begin{itemize}
   \item $moveOrder[0] \gets columns/2$
@@ -376,7 +382,7 @@ Se in un sottogruppo ci sono pedine di entrambi i giocatori oppure le celle sono
 sarà $0$. Altrimenti, se ci sono solamente pedine di uno dei due giocatori e celle libere, il punteggio sarà dato dal
 numero di pedine al quadrato.
 
-Il metodo di assegnamento dello score di diagonali e andti-diagonali è molto simile a questo.
+Il metodo di assegnamento dello score di diagonali e anti-diagonali è molto simile a questo.
 
 Invece, per ogni colonna viene presa la cella non vuota più in alto
 e vengono contate le pedine consecutive dello stesso colore verso il basso; se il numero delle pedine consecutive,
@@ -412,8 +418,8 @@ più punti; pertanto abbiamo deciso di mantenere la funzione originale ed elimin
 
 \section{Conclusioni}
 A causa dell'ordinamento della valutazione delle mosse non sempre ottimale, il costo 
-computazionale dell'algoritmo è compreso fra il costo di \textsc{MiniMax} $O(3^{nm})$ (ordinamento delle mosse
-pessimo) e quello di \textsc{AlphaBeta} $O({\sqrt{3^{nm}}})$ (ordinamento delle mosse ottimo). 
+computazionale dell'algoritmo è compreso fra il costo di \textsc{MiniMax} O$(3^{nm})$ (ordinamento delle mosse
+pessimo) e quello di \textsc{AlphaBeta} O$({\sqrt{3^{nm}}})$ (ordinamento delle mosse ottimo). 
 
 A questo, va aggiunto il costo di \textsc{IterativeDeepening}, che però è di ordine inferiore e quindi 
 trascurabile a livello asintotico, e il costo della \textsc{valutazione euristica}; questa viene effettuata 
@@ -425,8 +431,9 @@ Infine, il costo di hashing per la \textsc{tabella delle trasposizioni} è costa
 
 \section{Fonti}
 
-Per lo sviluppo del progetto abbiamo consultato i siti web \textit{chessprogramming.org}, che contiene
-diverse informazioni riguardo alla programmazione dei motori scacchistici e 
-\textit{blog.gamesolver.org}, il progetto di Pascal Pons per risolvere il gioco Connect 4.
+Per lo sviluppo del progetto abbiamo consultato i siti web 
+\href{https://www.chessprogramming.org}{chessprogramming.org}, che contiene diverse informazioni riguardo alla programmazione 
+dei motori scacchistici e \href{http://blog.gamesolver.org}{blog.gamesolver.org}, 
+il progetto di Pascal Pons per risolvere il gioco Connect 4.
 
 \end{document}

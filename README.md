@@ -1,36 +1,32 @@
-# Connect X project for the algorithm course of University of Bologna in 2022/2023
+# Kebabo AI: Connect X project for the algorithm course of University of Bologna in 2022/2023
 ## Lorenzo Peronese, Omar Ayache
 
-Run this commands in the `connectx/` directory.
+Run this commands in the root directory.
+The default parameters are: board="6 7 4", timeout=10, reps=1
 
 ## Build from source
 ```
-javac -cp ".." *.java */*.java
+make build
 ```
 
 ## CXGame application:
 ### - Human vs Computer
 ```
-java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
+make HvsC 1=Kebabo
 ```
 
 ### - Computer vs Computer
 ```
-java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
+make CvsC board="20 20 10" 1=Kebabo 2=L0
 ```
 
 ## CXPlayerTester application:
 ### - Output score only:
 ```
-java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
+make test 1=Kebabo 2=L0 reps=10 timeout=15
 ```
 
 ### - Verbose output
 ```
-java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
-```
-
-### - Verbose output and customized timeout and number of game repetitions
-```
-java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t "timeout_in_secs" -r "rounds_number"
+make testv board="7 7 5" 2=Kebabo 1=L0 reps=25
 ```
