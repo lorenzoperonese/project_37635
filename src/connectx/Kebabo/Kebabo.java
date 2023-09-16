@@ -102,7 +102,7 @@ public class Kebabo implements CXPlayer {
         int bestMove = -1;
         int currentBestMove = -1;
         try {
-            while(iterativeDepth < this.columns * this.rows - B.numOfMarkedCells() +1) {
+            while(iterativeDepth < this.columns * this.rows) {
                 iterativeDepth += 2;
                 currentBestMove = alphaBetaSearch(B, iterativeDepth);
                 if(currentBestMove != -1)
