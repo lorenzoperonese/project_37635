@@ -148,9 +148,8 @@ public class Kebabo implements CXPlayer {
 
     int alphaBetaMax(CXBoard B, int alpha, int beta, int depthleft) throws TimeoutException {
         checktime();
-        int transpositionScore = lookupTranspositionTable(B, depthleft);
-        if (transpositionScore != Integer.MIN_VALUE)
-            return transpositionScore;
+        if(searchTranspositionTable(B, depthleft))
+            return extractTranspositionTable(B);
         if (depthleft == 0 || B.gameState() != CXGameState.OPEN) return evaluate(B);
         for (int i = 0; i < this.columns; i++) {
             if (!B.fullColumn(this.moveOrder[i])) {
@@ -400,22 +399,21 @@ public class Kebabo implements CXPlayer {
         return hash;
     }
 
-    private int lookupTranspositionTable(CXBoard board, int depth) {
+    private boolean searchTranspositionTable(CXBoard board, int depth) {
         long hash = computeHash(board);
         // se l'hash della board attuale è nella table e è calcolato a una profondità maggiore 
         // o uguale a quella attuale oppure so che la mossa è un nodo terminale, lo ritorno
-        if (transpositionTable.containsKey(hash) && (transpositionTable.get(hash).getDepth() >= depth || transpositionTable.get(hash).getScore() == Integer.MAX_VALUE 
-        || transpositionTable.get(hash).getScore() == Integer.MIN_VALUE))
-            return transpositionTable.get(hash).getScore();
-        // valore che indica che la posizione non è presente nella tabella
-        return Integer.MIN_VALUE;
+        return transpositionTable.containsKey(hash) && (transpositionTable.get(hash).getDepth() >= depth
+                || transpositionTable.get(hash).getScore() == Integer.MAX_VALUE
+                || transpositionTable.get(hash).getScore() == Integer.MIN_VALUE);
+    }
+
+    private int extractTranspositionTable(CXBoard board) {
+        long hash = computeHash(board);
+        return transpositionTable.get(hash).getScore();
     }
 
     private void storeTranspositionTable(CXBoard board, int score, int depth) {
-        // se il tempo sta per scadere non aggiorno la transposition table
-        // perchè il valore che è stato calcolato potrebbe essere inesatto
-        if (timeIsRunningOut)
-            return;
         long hash = computeHash(board);
         Score_Depth sd = new Score_Depth(score, depth);
         transpositionTable.put(hash, sd);
